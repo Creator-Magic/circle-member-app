@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Circle Member App Embed</title>
+</head>
+<body>
+    <!-- 
+        IMPORTANT: Update the src URL to match your APP_DOMAIN from .env
+        Example: https://your-app.example.com or your deployed app URL
+    -->
+    <iframe 
+        id="circle-member-app"
+        src="https://your-app.example.com"
+        width="100%" 
+        height="500" 
+        frameborder="0"
+        style="border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    </iframe>
+
+    <script>
+    (function() {
+        const iframe = document.getElementById('circle-member-app');
+        let memberDataSent = false;
+        
+        // IMPORTANT: Update this to match your APP_DOMAIN from .env
+        const ALLOWED_APP_ORIGIN = 'https://your-app.example.com';
+        
+        // Listen for messages from the iframe
+        window.addEventListener('message', function(event) {
+            // Security: only accept messages from your app domain
+            if (event.origin !== ALLOWED_APP_ORIGIN && event.origin !== 'http://localhost:8080') {
+                return;
+            }
+            
+            // Handle request for member data
+            if (event.data && event.data.type === 'REQUEST_CIRCLE_MEMBER_DATA') {
+                // Try to get Circle member data from various sources
+                const memberData = getMemberData();
+                
+                if (memberData && memberData.email) {
+                    // Send member data to iframe
+                    iframe.contentWindow.postMessage({
+                        type: 'CIRCLE_MEMBER_DATA',
+                        member: memberData
+                    }, event.origin);
+                    memberDataSent = true;
+                }
+            }
+        });
+        
+        // Comprehensive function to get member data from Circle context
+        function getMemberData() {
+            // Method 1: Circle's official global variable (HIGHEST PRIORITY)
+            if (typeof window.circleUser !== 'undefined') {
+                if (window.circleUser.email) {
+                    return {
+                        email: window.circleUser.email,
+                        name: window.circleUser.name || null,
+                        id: window.circleUser.id || window.circleUser.member_id || null,
+                        avatar_url: window.circleUser.avatar_url || window.circleUser.profileImage || null
+                    };
+                }
+            }
+            
+            // Method 2: Check for Circle member object (legacy or alternative name)
+            if (typeof window.Circle !== 'undefined' && window.Circle.member) {
+                return window.Circle.member;
+            }
+            
+            // Method 3: Check for circleData global
+            if (typeof window.circleData !== 'undefined' && window.circleData.member) {
+                return window.circleData.member;
+            }
+            
+            // Method 4: Check template variables (if they were processed)
+            const templateEmail = '{{member.email}}';
+            const templateId = '{{member.id}}';
+            const templateName = '{{member.name}}';
+            
+            if (templateEmail && !templateEmail.includes('{{')) {
+                return {
+                    email: templateEmail,
+                    id: templateId !== '{{member.id}}' ? templateId : null,
+                    name: templateName !== '{{member.name}}' ? templateName : null
+                };
+            }
+            
+            // Method 5: Enhanced localStorage/sessionStorage checking
+            const storageKeys = [
+                'circle_member',
+                'circleUser',
+                'circle-member',
+                'member',
+                'currentUser',
+                'circle_current_member',
+                'auth_member'
+            ];
+            
+            for (const key of storageKeys) {
+                try {
+                    const localData = localStorage.getItem(key);
+                    if (localData) {
+                        const parsed = JSON.parse(localData);
+                        if (parsed && parsed.email) {
+                            return parsed;
+                        }
+                    }
+                    
+                    const sessionData = sessionStorage.getItem(key);
+                    if (sessionData) {
+                        const parsed = JSON.parse(sessionData);
+                        if (parsed && parsed.email) {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next key
+                }
+            }
+            
+            // Method 6: Check meta tags
+            const metaTags = {
+                'circle:member:email': document.querySelector('meta[name="circle:member:email"]'),
+                'member-email': document.querySelector('meta[name="member-email"]'),
+                'user-email': document.querySelector('meta[name="user-email"]')
+            };
+            
+            for (const [name, tag] of Object.entries(metaTags)) {
+                if (tag && tag.content) {
+                    return {
+                        email: tag.content,
+                        id: document.querySelector('meta[name="circle:member:id"]')?.content || 
+                            document.querySelector('meta[name="member-id"]')?.content,
+                        name: document.querySelector('meta[name="circle:member:name"]')?.content ||
+                              document.querySelector('meta[name="member-name"]')?.content
+                    };
+                }
+            }
+            
+            // Method 7: Enhanced DOM attribute checking
+            const selectors = [
+                '[data-member-email]',
+                '[data-user-email]',
+                '[data-circle-member]',
+                '.member-info',
+                '.user-info',
+                '#current-member',
+                '[data-current-user]'
+            ];
+            
+            for (const selector of selectors) {
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    for (const element of elements) {
+                        const email = element.getAttribute('data-member-email') || 
+                                    element.getAttribute('data-user-email') ||
+                                    element.getAttribute('data-email');
+                        
+                        if (email && email.includes('@')) {
+                            return {
+                                email: email,
+                                id: element.getAttribute('data-member-id') || 
+                                   element.getAttribute('data-user-id'),
+                                name: element.getAttribute('data-member-name') || 
+                                     element.getAttribute('data-user-name')
+                            };
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next selector
+                }
+            }
+            
+            // Method 8: Check body and html data attributes
+            const bodyAttrs = document.body.dataset;
+            const htmlAttrs = document.documentElement.dataset;
+            
+            if (bodyAttrs.memberEmail || bodyAttrs.userEmail) {
+                return {
+                    email: bodyAttrs.memberEmail || bodyAttrs.userEmail,
+                    id: bodyAttrs.memberId || bodyAttrs.userId,
+                    name: bodyAttrs.memberName || bodyAttrs.userName
+                };
+            }
+            
+            if (htmlAttrs.memberEmail || htmlAttrs.userEmail) {
+                return {
+                    email: htmlAttrs.memberEmail || htmlAttrs.userEmail,
+                    id: htmlAttrs.memberId || htmlAttrs.userId,
+                    name: htmlAttrs.memberName || htmlAttrs.userName
+                };
+            }
+            
+            // Method 9: Try to extract from Circle's React/Vue components (if exposed)
+            // React DevTools detected but extraction not implemented
+            
+            // Method 10: Check for JWT in cookies (client-side accessible ones)
+            try {
+                const cookies = document.cookie.split(';');
+                for (const cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name.includes('token') || name.includes('jwt') || name.includes('auth')) {
+                        // Try to decode JWT (only if it's a valid JWT format)
+                        if (value && value.split('.').length === 3) {
+                            try {
+                                const payload = JSON.parse(atob(value.split('.')[1]));
+                                if (payload.email || payload.user_email) {
+                                    return {
+                                        email: payload.email || payload.user_email,
+                                        id: payload.id || payload.user_id || payload.sub,
+                                        name: payload.name || payload.user_name
+                                    };
+                                }
+                            } catch (e) {
+                                // Not a valid JWT or can't decode
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // Could not check cookies
+            }
+            
+            return null;
+        }
+        
+        // Function to continuously check for member data
+        function checkForMemberData() {
+            if (!memberDataSent) {
+                const memberData = getMemberData();
+                if (memberData && memberData.email) {
+                    // Use the iframe's actual origin (from src attribute)
+                    const iframeSrc = iframe.src;
+                    const iframeOrigin = new URL(iframeSrc).origin;
+                    iframe.contentWindow.postMessage({
+                        type: 'CIRCLE_MEMBER_DATA',
+                        member: memberData
+                    }, iframeOrigin);
+                    memberDataSent = true;
+                }
+            }
+        }
+        
+        // Initialize - try multiple times as Circle might load data asynchronously
+        setTimeout(checkForMemberData, 500);   // Try after 500ms
+        setTimeout(checkForMemberData, 1000);  // Try after 1 second
+        setTimeout(checkForMemberData, 2000);  // Try after 2 seconds
+        setTimeout(checkForMemberData, 3000);  // Try after 3 seconds
+        
+        // Also check when DOM changes (in case Circle adds member data dynamically)
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(function(mutations) {
+                if (!memberDataSent) {
+                    checkForMemberData();
+                }
+            });
+            
+            observer.observe(document.body, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+                attributeFilter: ['data-member-email', 'data-member-id', 'data-user-email', 'data-user-id']
+            });
+            
+            // Stop observing after 10 seconds to prevent performance issues
+            setTimeout(() => observer.disconnect(), 10000);
+        }
+        
+        // Circle embed initialized
+        
+    })();
+    </script>
+</body>
+</html>

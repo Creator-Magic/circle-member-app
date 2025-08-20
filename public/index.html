@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Member Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .member-card {
+            text-align: center;
+        }
+        
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .member-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .member-email {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .member-details {
+            background: #f7f7f7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge.paid {
+            background: #28a745;
+        }
+        
+        .badge.free {
+            background: #6c757d;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e9ecef;
+            color: #495057;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .credits-display {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 15px 0;
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+        
+        .credits-amount {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .credits-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .admin-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .admin-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            opacity: 0.8;
+        }
+        
+        .admin-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .admin-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            opacity: 1;
+        }
+        
+        .admin-button:hover::before {
+            left: 100%;
+        }
+        
+        .admin-button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .admin-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 0.3px;
+        }
+        
+        
+        .text-success {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Controls -->
+    <div id="admin-controls" class="admin-controls" style="display: none;">
+        <button class="admin-button" onclick="toggleAdminPanel()" title="Open Admin Panel">
+            <span class="admin-text">Admin</span>
+        </button>
+    </div>
+
+
+    <div class="container">
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Authenticating...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global config object
+        let appConfig = {
+            allowedOrigins: ['http://localhost:8080'],
+            requireIframe: false,
+            disableEmailOnlyAuth: false,
+            environment: 'development'
+        };
+        
+        // Fetch configuration from server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    appConfig = await response.json();
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+        
+        // Listen for postMessage from parent window (Circle)
+        window.addEventListener('message', function(event) {
+            // PostMessage received from parent
+            
+            // Security: only accept messages from trusted origins
+            const trustedOrigins = appConfig.allowedOrigins || ['http://localhost:8080'];
+            
+            if (!trustedOrigins.some(origin => event.origin.startsWith(origin))) {
+                return;
+            }
+            
+            // Handle different types of messages
+            if (event.data && event.data.type === 'CIRCLE_MEMBER_DATA') {
+                handleMemberData(event.data.member);
+            } else if (event.data && event.data.type === 'CIRCLE_ACCESS_TOKEN') {
+                authenticateWithToken(event.data.access_token);
+            }
+        });
+
+        // Function to handle member data received via postMessage
+        async function handleMemberData(member) {
+            if (member && member.email) {
+                // First authenticate with the server using the member email
+                
+                try {
+                    const response = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: member.email,
+                            name: member.name || null,
+                            avatar_url: member.avatar_url || null
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        // Authentication successful, display full member info from server
+                        
+                        // Store tokens if provided (for future API calls)
+                        if (data.access_token) {
+                            sessionStorage.setItem('circle_access_token', data.access_token);
+                            sessionStorage.setItem('circle_refresh_token', data.refresh_token);
+                            sessionStorage.setItem('circle_token_expires', data.expires_at);
+                        }
+                        
+                        // Use member data from server response, or fallback to what we have
+                        const memberToDisplay = data.member || member;
+                        displayMemberInfo(memberToDisplay);
+                    } else {
+                        // Authentication failed, display what we have from postMessage
+                        displayMemberInfo(member);
+                    }
+                } catch (error) {
+                    // Fallback: display what we have from postMessage
+                    displayMemberInfo(member);
+                }
+            } else {
+                showFallbackAuth();
+            }
+        }
+
+        // Function to authenticate using access token
+        async function authenticateWithToken(accessToken) {
+            try {
+                const response = await fetch('/api/auth/cookies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        access_token: accessToken
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Cookie set, now reload to use traditional auth
+                    window.location.reload();
+                } else {
+                    throw new Error(data.error || 'Cookie authentication failed');
+                }
+                
+            } catch (error) {
+                showFallbackAuth();
+            }
+        }
+
+        // Function to check for Circle session
+        async function checkCircleSession() {
+            try {
+                const response = await fetch('/api/member/check', {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                return data.authenticated === true;
+                
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Function to display member information
+        function displayMemberInfo(member) {
+            // Store current member for admin panel access
+            currentMember = member;
+            
+            const content = document.getElementById('content');
+            const initials = member.name ? 
+                member.name.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                '?';
+            
+            // Show admin controls if user is admin
+            const adminControls = document.getElementById('admin-controls');
+            if (member.is_admin) {
+                adminControls.style.display = 'block';
+            }
+            
+            // Format credit display
+            const creditsDisplay = (typeof member.credits_balance !== 'undefined') ? `
+                <div class="credits-display">
+                    <div class="credits-amount">${member.credits_balance}</div>
+                    <div class="credits-label">Available Credits</div>
+                    ${member.credits_last_refreshed ? `
+                        <div style="font-size: 10px; opacity: 0.8; margin-top: 5px;">
+                            Last refreshed: ${new Date(member.credits_last_refreshed).toLocaleDateString()}
+                        </div>
+                    ` : ''}
+                </div>
+            ` : '';
+            
+            content.innerHTML = `
+                <div class="member-card">
+                    <div class="avatar">
+                        ${member.avatar_url ? 
+                            `<img src="${member.avatar_url}" alt="${member.name}">` : 
+                            initials
+                        }
+                    </div>
+                    <div class="member-name">${member.name || 'Unknown User'}</div>
+                    <div class="member-email">${member.email || 'No email'}</div>
+                    ${member.tagline ? `<p style="color: #666; font-size: 14px; margin-bottom: 20px;">${member.tagline}</p>` : ''}
+                    
+                    ${creditsDisplay}
+                    
+                    <div class="member-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Member ID:</span>
+                            <span class="detail-value">${member.id || member.community_member_id || 'Not available'}</span>
+                        </div>
+                        ${member.created_at ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Member Since:</span>
+                            <span class="detail-value">${new Date(member.created_at).toLocaleDateString()}</span>
+                        </div>
+                        ` : ''}
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">
+                                ${member.is_paid ? 
+                                    '<span class="badge paid">Paid Member</span>' : 
+                                    '<span class="badge free">Free Member</span>'
+                                }
+                                ${member.is_new_user ? '<span class="badge" style="background: #17a2b8;">New User</span>' : ''}
+                            </span>
+                        </div>
+                        ${member.is_admin ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Role:</span>
+                            <span class="detail-value"><span class="badge">Admin</span></span>
+                        </div>
+                        ` : ''}
+                        ${member.is_moderator ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Role:</span>
+                            <span class="detail-value"><span class="badge">Moderator</span></span>
+                        </div>
+                        ` : ''}
+                        ${member.tags && member.tags.length > 0 ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Tags:</span>
+                            <span class="detail-value">
+                                <div class="tags-container">
+                                    ${member.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                </div>
+                            </span>
+                        </div>
+                        ` : ''}
+                        ${member.db_error ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Database:</span>
+                            <span class="detail-value" style="color: #dc3545; font-size: 12px;">${member.db_error}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to show fallback authentication form or error
+        function showFallbackAuth() {
+            const content = document.getElementById('content');
+            
+            // In production with security enabled, don't show the form
+            if (appConfig.disableEmailOnlyAuth) {
+                content.innerHTML = `
+                    <div class="error">
+                        <h3>Access Restricted</h3>
+                        <p>This application can only be accessed from within the Circle community.</p>
+                        <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                            Please access this content through the Circle platform where it is embedded.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Only show form in development or if email-only auth is allowed
+            content.innerHTML = `
+                <div class="auth-fallback">
+                    <h3>Authentication Required</h3>
+                    <p>Unable to authenticate automatically. Please provide your member information:</p>
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin: 15px 0; border-radius: 4px;">
+                        <strong>⚠️ Development Mode</strong><br>
+                        <small>Manual authentication is only available in development. Production requires Circle embedding.</small>
+                    </div>
+                    <form id="fallback-form">
+                        <div style="margin-bottom: 15px;">
+                            <label for="email" style="display: block; margin-bottom: 5px;">Email:</label>
+                            <input type="email" id="email" name="email" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="member_id" style="display: block; margin-bottom: 5px;">Member ID (optional):</label>
+                            <input type="text" id="member_id" name="member_id" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <button type="submit" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                            Authenticate
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            // Add event listener to the form
+            const form = document.getElementById('fallback-form');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const email = formData.get('email');
+                    const memberId = formData.get('member_id');
+                    
+                    if (email || memberId) {
+                        await initTraditionalAuth(email, memberId);
+                    }
+                });
+            }
+        }
+
+        // Traditional authentication function (URL params or form)
+        async function initTraditionalAuth(emailParam = null, memberIdParam = null, ssoIdParam = null) {
+            const content = document.getElementById('content');
+            
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const email = emailParam || params.get('email');
+                const memberId = memberIdParam || params.get('member_id');
+                const ssoId = ssoIdParam || params.get('sso_id');
+                
+                // Check for template variables that weren't replaced
+                if (email && (email.includes('{{') && email.includes('}}'))) {
+                    throw new Error(`Invalid email format: The email parameter "${email}" appears to be an unprocessed template variable. Please ensure template variables are replaced with actual email addresses before accessing this page.`);
+                }
+                
+                if (memberId && (memberId.includes('{{') && memberId.includes('}}'))) {
+                    throw new Error(`Invalid member ID format: The member_id parameter "${memberId}" appears to be an unprocessed template variable. Please ensure template variables are replaced with actual values before accessing this page.`);
+                }
+                
+                if (ssoId && (ssoId.includes('{{') && ssoId.includes('}}'))) {
+                    throw new Error(`Invalid SSO ID format: The sso_id parameter "${ssoId}" appears to be an unprocessed template variable. Please ensure template variables are replaced with actual values before accessing this page.`);
+                }
+                
+                // Basic email validation
+                if (email) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        throw new Error(`Invalid email format: "${email}" is not a valid email address. Please provide a valid email address in the format: user@domain.com`);
+                    }
+                }
+                
+                const authData = {};
+                if (email) authData.email = email;
+                if (memberId) authData.community_member_id = memberId;
+                if (ssoId) authData.sso_id = ssoId;
+                
+                if (Object.keys(authData).length === 0) {
+                    throw new Error('No authentication parameters provided. Please include email, member_id, or sso_id in the URL.');
+                }
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(authData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Authentication failed');
+                }
+                
+                const member = data.member;
+                displayMemberInfo(member);
+                
+            } catch (error) {
+                
+                const isTemplateError = error.message.includes('template variable') || error.message.includes('{{') || error.message.includes('}}');
+                const isEmailFormatError = error.message.includes('Invalid email format');
+                
+                let helpText = '';
+                if (isTemplateError) {
+                    helpText = `
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: #856404;">💡 Template Variable Issue Detected</h4>
+                            <p style="margin: 0; color: #856404;">
+                                It looks like you're accessing this page with unprocessed template variables. 
+                                This usually happens when:
+                            </p>
+                            <ul style="color: #856404; margin: 10px 0;">
+                                <li>An email campaign or marketing automation didn't properly replace variables</li>
+                                <li>Testing a link before variables are processed</li>
+                                <li>Copy-pasting a template URL instead of a processed one</li>
+                            </ul>
+                            <p style="margin: 10px 0 0 0; color: #856404;">
+                                <strong>Solution:</strong> Replace template variables like <code>{{member.email}}</code> with actual values, 
+                                e.g., <code>?email=user@example.com</code>
+                            </p>
+                        </div>
+                    `;
+                } else if (isEmailFormatError) {
+                    helpText = `
+                        <div style="background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: #721c24;">📧 Email Format Issue</h4>
+                            <p style="margin: 0; color: #721c24;">
+                                Please ensure the email parameter is a valid email address in the format: <code>user@domain.com</code>
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                content.innerHTML = `
+                    <div class="error">
+                        <h3>Authentication Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        ${helpText}
+                        <details style="margin-top: 15px;">
+                            <summary>Debug Information</summary>
+                            <pre style="background: #f5f5f5; padding: 10px; margin-top: 10px; overflow: auto; font-size: 12px;">${JSON.stringify({
+                                message: error.message,
+                                url: window.location.href,
+                                timestamp: new Date().toISOString(),
+                                userAgent: navigator.userAgent,
+                                detected_issue: isTemplateError ? 'template_variable' : (isEmailFormatError ? 'email_format' : 'other')
+                            }, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+        }
+
+        // Main initialization function
+        async function initAuth() {
+            // Load configuration first
+            await loadConfig();
+            
+            // Check if we're in an iframe
+            const isInIframe = window.parent !== window;
+            
+            // Security check: if iframe is required but we're not in one
+            if (appConfig.requireIframe && !isInIframe) {
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <div class="error">
+                        <h3>Direct Access Not Allowed</h3>
+                        <p>This application must be accessed through the Circle community platform.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // First check URL parameters - they take priority
+            const params = new URLSearchParams(window.location.search);
+            const hasUrlParams = params.get('email') || params.get('member_id') || params.get('sso_id');
+            
+            // Skip template variables
+            const email = params.get('email');
+            if (email && email.includes('{{') && email.includes('}}')) {
+                // In iframe, try postMessage
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'REQUEST_CIRCLE_MEMBER_DATA',
+                        source: 'circle-member-app'
+                    }, '*');
+                    
+                    // Wait for postMessage response, then show fallback form if needed
+                    setTimeout(() => {
+                        const content = document.getElementById('content');
+                        // Check if content is still loading (no auth happened)
+                        if (content.querySelector('.loading')) {
+                            showFallbackAuth();
+                        }
+                    }, 3000);
+                } else {
+                    // Not in iframe and template variables present
+                    showFallbackAuth();
+                }
+            } else if (hasUrlParams) {
+                // Valid URL parameters present
+                await initTraditionalAuth();
+            } else {
+                // No URL params - check if in iframe
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'REQUEST_CIRCLE_MEMBER_DATA',
+                        source: 'circle-member-app'
+                    }, '*');
+                    
+                    // Check for Circle session
+                    const hasSession = await checkCircleSession();
+                    if (hasSession) {
+                        showFallbackAuth();
+                    } else {
+                        // Wait for postMessage, then show form
+                        setTimeout(() => {
+                            const content = document.getElementById('content');
+                            if (content.querySelector('.loading')) {
+                                showFallbackAuth();
+                            }
+                        }, 3000);
+                    }
+                } else {
+                    // Running standalone without params
+                    showFallbackAuth();
+                }
+            }
+        }
+
+        // Admin Panel Functions
+        let currentMember = null;
+        
+        async function toggleAdminPanel() {
+            if (!currentMember || !currentMember.is_admin) {
+                console.error('Admin access denied - user is not an admin');
+                return;
+            }
+
+            try {
+                // Generate admin token
+                const response = await fetch('/api/admin/generate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        circle_member_id: currentMember.id || currentMember.community_member_id
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to generate admin token');
+                }
+
+                const data = await response.json();
+                
+                // Open admin panel in new window
+                const adminWindow = window.open(
+                    data.adminUrl, 
+                    'CircleAdminPanel',
+                    'width=1200,height=800,scrollbars=yes,resizable=yes,status=yes,location=no,menubar=no,toolbar=no'
+                );
+
+                if (!adminWindow) {
+                    alert('Please allow popups for this site to open the admin panel.');
+                } else {
+                    console.log('Admin panel opened in new window');
+                }
+
+            } catch (error) {
+                console.error('Failed to open admin panel:', error);
+                alert('Failed to open admin panel: ' + error.message);
+            }
+        }
+
+        
+        // Start the app
+        initAuth();
+    </script>
+</body>
+</html>
