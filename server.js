@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 8080;
 // Parse allowed origins from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:8080']; // Only localhost in development
+  : ['http://0.0.0.0:8080'];
 
 // Parse paid member tags from environment variable
 const paidMemberTags = process.env.PAID_MEMBER_TAGS
@@ -32,10 +32,9 @@ pool.on('error', (err) => {
   console.error('Database connection error:', err);
 });
 
-// Add localhost in development mode
 if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:8080');
-  allowedOrigins.push('http://localhost:3000');
+  allowedOrigins.push('http://0.0.0.0:8080');
+  allowedOrigins.push('http://0.0.0.0:3000');
 }
 
 console.log('Allowed CORS origins:', allowedOrigins);
@@ -1595,5 +1594,5 @@ app.post('/api/admin/refresh-credits/:circle_member_id', checkAdminToken, async 
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
